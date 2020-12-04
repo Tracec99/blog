@@ -1,0 +1,112 @@
+---
+title: DASC 1104 Final Project Proposal
+author: 'Trace Freeman'
+date: '2020-12-04'
+slug: dasc-1104-final-project-proposal
+categories: []
+tags: []
+---
+
+<link href="index_files/anchor-sections/anchor-sections.css" rel="stylesheet" />
+<script src="index_files/anchor-sections/anchor-sections.js"></script>
+
+
+<pre class="r"><code>library(tidyverse)
+library(here)</code></pre>
+<div id="blog-link" class="section level2">
+<h2>1.0 Blog Link</h2>
+<p>My blog can be found at <a href="https://tracef.netlify.app/" class="uri">https://tracef.netlify.app/</a></p>
+</div>
+<div id="global-crop-yields" class="section level2">
+<h2>2.0 Global Crop Yields</h2>
+<pre class="r"><code>dat1 &lt;- read_csv(here(&#39;data&#39;, &#39;tidytuesday&#39;, &#39;data&#39;, &#39;2020&#39;, &#39;2020-09-01&#39;,
+                      &#39;arable_land_pin.csv&#39;))
+dat2 &lt;- read_csv(here(&#39;data&#39;, &#39;tidytuesday&#39;, &#39;data&#39;, &#39;2020&#39;, &#39;2020-09-01&#39;, &#39;cereal_crop_yield_vs_fertilizer_application.csv&#39;))
+dat3 &lt;- read_csv(here(&#39;data&#39;, &#39;tidytuesday&#39;, &#39;data&#39;, &#39;2020&#39;, &#39;2020-09-01&#39;, &#39;cereal_yields_vs_tractor_inputs_in_agriculture.csv&#39;))
+dat4 &lt;- read_csv(here(&#39;data&#39;, &#39;tidytuesday&#39;, &#39;data&#39;, &#39;2020&#39;, &#39;2020-09-01&#39;,
+                      &#39;key_crop_yields.csv&#39;))
+glimpse(dat1)</code></pre>
+<pre><code>## Observations: 11,280
+## Variables: 4
+## $ Entity                                                                   &lt;chr&gt; …
+## $ Code                                                                     &lt;chr&gt; …
+## $ Year                                                                     &lt;dbl&gt; …
+## $ `Arable land needed to produce a fixed quantity of crops ((1.0 = 1961))` &lt;dbl&gt; …</code></pre>
+<pre class="r"><code>glimpse(dat2)</code></pre>
+<pre><code>## Observations: 11,965
+## Variables: 5
+## $ Entity                                            &lt;chr&gt; &quot;Afghanistan&quot;, &quot;Afg…
+## $ Code                                              &lt;chr&gt; &quot;AFG&quot;, &quot;AFG&quot;, &quot;AFG&quot;…
+## $ Year                                              &lt;dbl&gt; 1961, 1962, 1963, 1…
+## $ `Cereal yield (tonnes per hectare)`               &lt;dbl&gt; 1.1151, 1.0790, 0.9…
+## $ `Nitrogen fertilizer use (kilograms per hectare)` &lt;dbl&gt; NA, NA, NA, NA, NA,…</code></pre>
+<pre class="r"><code>glimpse(dat3)</code></pre>
+<pre><code>## Observations: 49,403
+## Variables: 6
+## $ Entity                                                  &lt;chr&gt; &quot;Afghanistan&quot;…
+## $ Code                                                    &lt;chr&gt; &quot;AFG&quot;, &quot;AFG&quot;,…
+## $ Year                                                    &lt;chr&gt; &quot;1961&quot;, &quot;1962…
+## $ `Tractors per 100 sq km arable land`                    &lt;dbl&gt; 0.1568627, 0.…
+## $ `Cereal yield (kilograms per hectare) (kg per hectare)` &lt;dbl&gt; 1115.1, 1079.…
+## $ `Total population (Gapminder)`                          &lt;dbl&gt; 9169000, 9351…</code></pre>
+<pre class="r"><code>glimpse(dat4)</code></pre>
+<pre><code>## Observations: 13,075
+## Variables: 14
+## $ Entity                             &lt;chr&gt; &quot;Afghanistan&quot;, &quot;Afghanistan&quot;, &quot;Afg…
+## $ Code                               &lt;chr&gt; &quot;AFG&quot;, &quot;AFG&quot;, &quot;AFG&quot;, &quot;AFG&quot;, &quot;AFG&quot;,…
+## $ Year                               &lt;dbl&gt; 1961, 1962, 1963, 1964, 1965, 1966…
+## $ `Wheat (tonnes per hectare)`       &lt;dbl&gt; 1.0220, 0.9735, 0.8317, 0.9510, 0.…
+## $ `Rice (tonnes per hectare)`        &lt;dbl&gt; 1.5190, 1.5190, 1.5190, 1.7273, 1.…
+## $ `Maize (tonnes per hectare)`       &lt;dbl&gt; 1.4000, 1.4000, 1.4260, 1.4257, 1.…
+## $ `Soybeans (tonnes per hectare)`    &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA…
+## $ `Potatoes (tonnes per hectare)`    &lt;dbl&gt; 8.6667, 7.6667, 8.1333, 8.6000, 8.…
+## $ `Beans (tonnes per hectare)`       &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA…
+## $ `Peas (tonnes per hectare)`        &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA…
+## $ `Cassava (tonnes per hectare)`     &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA…
+## $ `Barley (tonnes per hectare)`      &lt;dbl&gt; 1.0800, 1.0800, 1.0800, 1.0857, 1.…
+## $ `Cocoa beans (tonnes per hectare)` &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA…
+## $ `Bananas (tonnes per hectare)`     &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA…</code></pre>
+<div id="data" class="section level3">
+<h3>2.1 Data</h3>
+<p>I will be analyzing global agricultural development using data taken from the TidyTuesday GitHub page. The primary data I will be using is contained <code>key_crop_yields.csv</code>, which has 13,075 observations and 14 variables: The variable <code>Entity</code>, a character that denotes the name of the region or country the observation comes from, the variable <code>Code</code>, which is the country code of the country the observation comes from (continents and regions use NA, and <code>Year</code>, a double ranging from 1961-2014 that represents the year the observation comes from. Additionally, there are 11 other variables representing 11 different crops and their yield in metric tonnes per hectare. The crops represented are wheat, rice, maize, soybeans, potatoes, beans, peas, cassava, barley, cocoa beans, and bananas.</p>
+<p>The other data of interest are found in <code>arable_land_pin.csv</code>, which contains the additional double variable <code>Arable land needed to produce a fixed quantity of crops ((1.0 = 1961))</code>, which can be used to track changes in land use efficiency over time. I will also be using the data in the files <code>cereal_crop_yield_vs_fertilizer_application.csv</code> and <code>cereal_yields_vs_tractor_inputs_in_agriculture.csv</code>, both of which track the use of fertilizer and tractors in agriculture over time, two important factors in farming efficiency. <code>Fertilizer</code> contains the additional variables <code>Cereal yield</code> and <code>Nitrogen fertilizer use</code>, while <code>Tractor_inputs</code> contains <code>Tractors per 100 sq km arable land</code>, <code>Cereal yield (kilograms per hectare)</code>, and <code>Total population</code>, which is taken from the Gapminder dataset. Each of these 3 datasets also contain the key variables <code>Entity</code>, <code>Code</code>, and <code>Year</code>.</p>
+</div>
+</div>
+<div id="questions" class="section level2">
+<h2>2.2 Questions</h2>
+<ul>
+<li><p>Question 1: What is the most abundant cereal crop that is grown in the world and has this changed since 1961? Is this popularity due to widespread use of the crop as a staple, or because of its use by specific population centers? This question can be answered by generating a line plot of the cereal yield of each crop across time. I will also pair the line plot with some sort of proportional plot of the most populous countries (taken from the gapminder variable in the <code>tractor</code> data) and the proportion of their total crop yield each cereal crop makes up.</p></li>
+<li><p>Question 2: Which countries have seen the greatest increase in crop yield and farming efficiency since 1961? To determine the answer, I will plot the average change in crop yields and the amount of land used to produce a fixed amount of crops since 1961 for each country using a categorical plot of some kind.</p></li>
+<li><p>Question 3: How much has increased fertilizer and tractor use changed farming efficiency? To investigate, I will visualize the data associated with the two tools and land use.</p></li>
+<li><p>Question 4: To be determined.</p></li>
+</ul>
+<div style="page-break-after: always;"></div>
+</div>
+<div id="washington-hiking" class="section level2">
+<h2>3.0 Washington Hiking</h2>
+<pre class="r"><code>dat_trail &lt;- read_rds(here(&#39;data&#39;, &#39;tidytuesday&#39;, &#39;data&#39;, &#39;2020&#39;, &#39;2020-11-24&#39;,
+                           &#39;hike_data.rds&#39;))
+glimpse(dat_trail)</code></pre>
+<pre><code>## Observations: 1,958
+## Variables: 8
+## $ name        &lt;chr&gt; &quot;Lake Hills Greenbelt&quot;, &quot;Snow Lake&quot;, &quot;Skookum Flats&quot;, &quot;Te…
+## $ location    &lt;chr&gt; &quot;Puget Sound and Islands -- Seattle-Tacoma Area&quot;, &quot;Snoqua…
+## $ length      &lt;chr&gt; &quot;2.3 miles, roundtrip&quot;, &quot;7.2 miles, roundtrip&quot;, &quot;7.8 mile…
+## $ gain        &lt;chr&gt; &quot;50&quot;, &quot;1800&quot;, &quot;300&quot;, &quot;1585&quot;, &quot;500&quot;, &quot;500&quot;, &quot;425&quot;, &quot;450&quot;, …
+## $ highpoint   &lt;chr&gt; &quot;330.0&quot;, &quot;4400.0&quot;, &quot;2550.0&quot;, &quot;2370.0&quot;, &quot;1000.0&quot;, &quot;2200.0&quot;…
+## $ rating      &lt;chr&gt; &quot;3.67&quot;, &quot;4.16&quot;, &quot;3.68&quot;, &quot;3.92&quot;, &quot;4.14&quot;, &quot;3.14&quot;, &quot;5.00&quot;, &quot;…
+## $ features    &lt;list&gt; [&lt;&quot;Dogs allowed on leash&quot;, &quot;Wildlife&quot;, &quot;Good for kids&quot;, …
+## $ description &lt;chr&gt; &quot;Hike through a pastoral area first settled and farmed in…</code></pre>
+</div>
+<div id="data-1" class="section level2">
+<h2>3.1 Data</h2>
+<p>Using data from from the TidyTuesday GitHub page, I will analyze the popularity and features of different hiking trails in Washington state. The data comes from the file <code>hike_data.rds</code>, which has 1,958 observations 8 variables. The variables in this data are <code>name</code>, the name of the trail as a character, <code>location</code>, the location of the trial as a character, <code>length</code>, the length of the trail as a character, <code>gain</code>, a character representing the gain in elevation as feet above sea level, <code>highpoint</code>, the max elevation of the trail as a character, <code>rating</code>, a character value representing a numeric user rating out of 5, <code>features</code>, a character list of features for each trial, and <code>description</code>, and character value giving a brief description of every trail.</p>
+</div>
+<div id="questions-1" class="section level2">
+<h2>3.2 Questions</h2>
+<ul>
+<li><p>Question 1: What are the highest and least rated trails in Washington? Are there any common factors that these trails share, such as location, length, or features? This question can be investigated by filtering for the 10 most popular and 10 least popular trails based on their rating, and using regular expressions to compare the different associated variables.</p></li>
+<li><p>Question 2: What are the most and least common features at trails? What trails should hikers look at hiking if they are looking for certain less common features?</p></li>
+<li><p>Question 3: To be determined.</p></li>
+</ul>
+</div>
