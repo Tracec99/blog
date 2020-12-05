@@ -1,0 +1,82 @@
+---
+output: 
+  pdf_document:
+    latex_engine: pdflatex
+    keep_tex: false
+    dev: cairo_pdf
+    template: svm-latex-resume.tex
+
+title: "Résumé"
+author: "Trace Freeman"
+date: "12/04/2020"
+
+fontawesome: TRUE
+# geometry: margin=1in
+geometry: "top=.5in, left =.5in, right=.5in, bottom=.75in"
+
+# How can we get a hold of you?
+email: tcf001@uark.edu
+phone: 501-733-8379
+location: "Fayetteville, AR; Vilonia, AR"
+github: tracec99
+web: tracef.netlify.app
+linkedin: "trace-freeman-1600221bb"
+mainfont: cochineal
+sansfont: Fira Sans
+# monofont: Fira Code # I want to use this, but seems to choke on @
+urlcolor: blue
+fontsize: 11pt
+
+includephoto: TRUE
+myphoto: picture.jpg
+# shift: "7in,-.25in" # this is default
+photobigness: 1.70cm
+# photozoom: ".2\textwidth" # this is default
+---
+
+
+<!-- Read more about Pandoc's [fenced_divs](https://pandoc.org/MANUAL.html#extension-fenced_divs) syntax -->
+
+# Education
+
+- University of Arkansas, Fayetteville, AR
+  
+  Candidate for Bachelor of Science in Data Science
+  
+- Vilonia High School, Vilonia, AR 
+  
+  High School Diploma with Honors; 3.9 GPA
+
+# Skills
+
+- Programming: Python, R
+- Software: Git, Visual Studio Code, RStudio, Microsoft Office Suite
+- Comfortable working in UNIX/Linux environments
+
+# Awards and Distinctions
+
+- Eagle Scout Award
+
+<!-- If you want another page, this is how you can do it... -->
+
+<!-- \newpage
+
+:::::: {.columns}
+::: {.column width="60%" data-latex="{0.60\textwidth}"}
+
+
+
+
+:::
+::: {.column width="2%" data-latex="{0.02\textwidth}"}
+\
+
+
+:::
+:::::: {.column width="38%" data-latex="{0.38\textwidth}"}
+
+
+:::
+::::::
+
+-->
