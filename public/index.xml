@@ -6,14 +6,24 @@
     <description>Recent content on Trace Freeman</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 09 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 10 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Washington Trails</title>
+      <link>/2020/12/10/washington-trails/</link>
+      <pubDate>Thu, 10 Dec 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/12/10/washington-trails/</guid>
+      <description>  </description>
+    </item>
+    
     <item>
       <title>Crop Yield Analysis</title>
       <link>/2020/12/09/crop-yield-analysis/</link>
       <pubDate>Wed, 09 Dec 2020 00:00:00 +0000</pubDate>
       
       <guid>/2020/12/09/crop-yield-analysis/</guid>
-      <description>  </description>
+      <description>test
+library(tidyverse) library(here) I will be analyzing global agricultural development using data taken from the TidyTuesday GitHub page. The primary data I will be using is contained key_crop_yields.csv, which has 13,075 observations and 14 variables: The variable Entity, a character that denotes the name of the region or country the observation comes from, the variable Code, which is the country code of the country the observation comes from (continents and regions use NA, and Year, a double ranging from 1961-2014 that represents the year the observation comes from.</description>
     </item>
     
     <item>

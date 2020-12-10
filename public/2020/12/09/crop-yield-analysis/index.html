@@ -22,6 +22,11 @@
 
 
 
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
 <link rel="stylesheet" href="/css/fonts.css" media="all">
 <link rel="stylesheet" href="/css/main.css" media="all">
 
@@ -59,7 +64,7 @@
 
   <article class="article">
     
-    <span class="article-duration">0 min read</span>
+    <span class="article-duration">4 min read</span>
     
 
     <h1 class="article-title">Crop Yield Analysis</h1>
@@ -74,7 +79,121 @@
 <script src="index_files/anchor-sections/anchor-sections.js"></script>
 
 
+<p>test</p>
+<pre class="r"><code>library(tidyverse)
+library(here)</code></pre>
+<p>I will be analyzing global agricultural development using data taken from the TidyTuesday GitHub page. The primary data I will be using is contained <code>key_crop_yields.csv</code>, which has 13,075 observations and 14 variables: The variable <code>Entity</code>, a character that denotes the name of the region or country the observation comes from, the variable <code>Code</code>, which is the country code of the country the observation comes from (continents and regions use NA, and <code>Year</code>, a double ranging from 1961-2014 that represents the year the observation comes from. Additionally, there are 11 other variables representing 11 different crops and their yield in metric tonnes per hectare. The different crops represented are wheat, rice, maize, soybeans, potatoes, beans, peas, cassava, barley, cocoa beans, and bananas.</p>
+<p>The other data of interest are found in <code>arable_land_pin.csv</code>, which contains the additional double variable <code>Arable land needed to produce a fixed quantity of crops ((1.0 = 1961))</code>, which can be used to track changes in land use efficiency over time. I will also be using the data in the files <code>cereal_crop_yield_vs_fertilizer_application.csv</code> and <code>cereal_yields_vs_tractor_inputs_in_agriculture.csv</code>, both of which track the use of fertilizer and tractors in agriculture over time, two important factors in farming efficiency. <code>Fertilizer</code> contains the additional variables <code>Cereal yield</code> and <code>Nitrogen fertilizer use</code>, while <code>Tractor_inputs</code> contains <code>Tractors per 100 sq km arable land</code>, <code>Cereal yield (kilograms per hectare)</code>, and <code>Total population</code>, which is taken from the Gapminder dataset. Each of these 3 datasets also contain the key variables <code>Entity</code>, <code>Code</code>, and <code>Year</code>.</p>
+<pre class="r"><code>filepath &lt;- here(&#39;data&#39;, &#39;tidytuesday&#39;, &#39;data&#39;, &#39;2020&#39;, &#39;2020-09-01&#39;)
+files &lt;- dir(filepath)
+csv_vec &lt;- str_detect(files, &#39;(.csv$)&#39;) # read only .csv files
+dat &lt;- list()
 
+for (i in 1:length(files)) {
+  if (csv_vec[i] &amp; files[i] != &quot;land_use_vs_yield_change_in_cereal_production.csv&quot;) {
+    dat[[i]] &lt;- read_csv(paste(filepath, files[i], sep=&#39;/&#39;))
+  }
+}</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   Entity = col_character(),
+##   Code = col_character(),
+##   Year = col_double(),
+##   `Arable land needed to produce a fixed quantity of crops ((1.0 = 1961))` = col_double()
+## )</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   Entity = col_character(),
+##   Code = col_character(),
+##   Year = col_double(),
+##   `Cereal yield (tonnes per hectare)` = col_double(),
+##   `Nitrogen fertilizer use (kilograms per hectare)` = col_double()
+## )</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   Entity = col_character(),
+##   Code = col_character(),
+##   Year = col_character(),
+##   `Tractors per 100 sq km arable land` = col_double(),
+##   `Cereal yield (kilograms per hectare) (kg per hectare)` = col_double(),
+##   `Total population (Gapminder)` = col_double()
+## )</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   Entity = col_character(),
+##   Code = col_character(),
+##   Year = col_double(),
+##   `Wheat (tonnes per hectare)` = col_double(),
+##   `Rice (tonnes per hectare)` = col_double(),
+##   `Maize (tonnes per hectare)` = col_double(),
+##   `Soybeans (tonnes per hectare)` = col_double(),
+##   `Potatoes (tonnes per hectare)` = col_double(),
+##   `Beans (tonnes per hectare)` = col_double(),
+##   `Peas (tonnes per hectare)` = col_double(),
+##   `Cassava (tonnes per hectare)` = col_double(),
+##   `Barley (tonnes per hectare)` = col_double(),
+##   `Cocoa beans (tonnes per hectare)` = col_double(),
+##   `Bananas (tonnes per hectare)` = col_double()
+## )</code></pre>
+<p>dat[[4]]: key_crop_yields.csv</p>
+<pre class="r"><code>crop_yields_long &lt;- dat[[4]] %&gt;%
+  pivot_longer(., -c(&#39;Entity&#39;, &#39;Code&#39;, &#39;Year&#39;), names_to = &#39;Crop&#39;, values_to = &#39;Value&#39;)
+  
+total_crops_by_year &lt;- crop_yields_long %&gt;%
+  group_by(Year, Crop) %&gt;%
+  summarize(Crop_Total = sum(Value, na.rm = TRUE))
+
+  ggplot(total_crops_by_year, aes(x = Year, y = Crop_Total, color = Crop)) +
+  geom_line()</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" />
+Looking at the above plot, it seems that the two most abundant crops in tonnes per hectare are bananas and potatoes. Bananas began as the most abundant in 1961, but were surpassed by potatoes sometime in the mid 70’s. How do the distribution of yields of these two crops compare?</p>
+<pre class="r"><code>avg_yield_potatoes &lt;- crop_yields_long %&gt;%
+  filter(Crop == &#39;Potatoes (tonnes per hectare)&#39;) %&gt;%
+  group_by(Entity, Code) %&gt;%
+  summarize(average_yield = sum(Value, na.rm = TRUE) / 
+              (max(crop_yields_long$Year) - min(crop_yields_long$Year))) %&gt;%
+  arrange(desc(average_yield)) %&gt;%
+  ungroup() %&gt;%
+  filter(is.na(Code) == FALSE) %&gt;%
+  slice(1:20)</code></pre>
+<pre class="r"><code>avg_yield_bananas &lt;- crop_yields_long %&gt;%
+  filter(Crop == &#39;Bananas (tonnes per hectare)&#39;) %&gt;%
+  group_by(Entity, Code) %&gt;%
+  summarize(average_yield = sum(Value, na.rm = TRUE) / 
+              (max(crop_yields_long$Year) - min(crop_yields_long$Year))) %&gt;%
+  arrange(desc(average_yield)) %&gt;%
+  ungroup() %&gt;%
+  filter(is.na(Code) == FALSE)</code></pre>
+<pre class="r"><code>avg_yield_both &lt;- crop_yields_long %&gt;%
+  filter(Crop == &#39;Bananas (tonnes per hectare)&#39; | Crop == &#39;Potatoes (tonnes per hectare)&#39;) %&gt;%
+  group_by(Entity, Code, Crop) %&gt;%
+  summarize(average_yield = sum(Value, na.rm = TRUE) / 
+              (max(crop_yields_long$Year) - min(crop_yields_long$Year))) %&gt;%
+  filter(is.na(Code) == FALSE)
+
+ggplot(avg_yield_both, aes(Crop, average_yield)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter()</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" />
+In the above plot, each point represents a country (regions and subregions were removed from the data) and its average yield of each crop per year since 1961. The upper outliers for the data are significantly higher for bananas, which also has a first quartile of 0.</p>
+<pre class="r"><code>change_in_land_efficiency_since_1961 &lt;- dat[[1]] %&gt;%
+  rename(Land_Efficiency = 
+           `Arable land needed to produce a fixed quantity of crops ((1.0 = 1961))`) %&gt;%
+  filter(Year == max(Year))
+
+change_in_land_top20 &lt;- change_in_land_efficiency_since_1961 %&gt;%
+  arrange(Land_Efficiency) %&gt;%
+  filter(Entity != &#39;Eastern Asia&#39;) %&gt;%
+  slice(1:20)
+  
+change_in_land_top20$Entity &lt;- factor(change_in_land_top20$Entity,
+                               levels = change_in_land_top20$Entity[order(
+                                   change_in_land_top20$Land_Efficiency, decreasing = TRUE)])
+
+ggplot(change_in_land_top20, aes(x = Entity, y = Land_Efficiency)) +
+  geom_col() +
+  coord_flip()</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
 
     </div>
   </article>
@@ -98,7 +217,22 @@
     </div>
     
 
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
     
+<script src="/js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
 
     
   </body>

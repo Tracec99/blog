@@ -8,17 +8,22 @@ tags: []
 editor_options: 
   chunk_output_type: console
 ---
-test
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 ```{r, message=FALSE}
 library(tidyverse)
 library(here)
+library(patchwork)
 ```
-
 I will be analyzing global agricultural development using data taken from the TidyTuesday GitHub page. The primary data I will be using is contained `key_crop_yields.csv`, which has 13,075 observations and 14 variables: The variable `Entity`, a character that denotes the name of the region or country the observation comes from, the variable `Code`, which is the country code of the country the observation comes from (continents and regions use NA, and `Year`, a double ranging from 1961-2014 that represents the year the observation comes from. Additionally, there are 11 other variables representing 11 different crops and their yield in metric tonnes per hectare. The different crops represented are wheat, rice, maize, soybeans, potatoes, beans, peas, cassava, barley, cocoa beans, and bananas. 
 
 The other data of interest are found in `arable_land_pin.csv`,  which contains the additional double variable `Arable land needed to produce a fixed quantity of crops ((1.0 = 1961))`, which can be used to track changes in land use efficiency over time. I will also be using the data in the files `cereal_crop_yield_vs_fertilizer_application.csv` and `cereal_yields_vs_tractor_inputs_in_agriculture.csv`, both of which track the use of fertilizer and tractors in agriculture over time, two important factors in farming efficiency. `Fertilizer` contains the additional variables `Cereal yield` and `Nitrogen fertilizer use`, while `Tractor_inputs` contains `Tractors per 100 sq km arable land`, `Cereal yield (kilograms per hectare)`, and `Total population`, which is taken from the Gapminder dataset. Each of these 3 datasets also contain the key variables `Entity`, `Code`, and `Year`.
 
 ```{r}
+
 filepath <- here('data', 'tidytuesday', 'data', '2020', '2020-09-01')
 files <- dir(filepath)
 csv_vec <- str_detect(files, '(.csv$)') # read only .csv files
@@ -48,7 +53,7 @@ total_crops_by_year <- crop_yields_long %>%
 Looking at the above plot, it seems that the two most abundant crops in tonnes per hectare are bananas and potatoes. Bananas began as the most abundant in 1961, but were surpassed by potatoes sometime in the mid 70's. How do the distribution of yields of these two crops compare?
 
 ```{r}
-avg_yield_potatoes <- crop_yields_long %>%
+avg_yield_potatoes20 <- crop_yields_long %>%
   filter(Crop == 'Potatoes (tonnes per hectare)') %>%
   group_by(Entity, Code) %>%
   summarize(average_yield = sum(Value, na.rm = TRUE) / 
@@ -60,14 +65,15 @@ avg_yield_potatoes <- crop_yields_long %>%
 ```
 
 ```{r}
-avg_yield_bananas <- crop_yields_long %>%
+avg_yield_bananas20 <- crop_yields_long %>%
   filter(Crop == 'Bananas (tonnes per hectare)') %>%
   group_by(Entity, Code) %>%
   summarize(average_yield = sum(Value, na.rm = TRUE) / 
               (max(crop_yields_long$Year) - min(crop_yields_long$Year))) %>%
   arrange(desc(average_yield)) %>%
   ungroup() %>%
-  filter(is.na(Code) == FALSE)
+  filter(is.na(Code) == FALSE) %>%
+  slice(1:20)
 ```
 
 ```{r}
@@ -83,6 +89,11 @@ ggplot(avg_yield_both, aes(Crop, average_yield)) +
   geom_jitter()
 ```
 In the above plot, each point represents a country (regions and subregions were removed from the data) and its average yield of each crop per year since 1961. The upper outliers for the data are significantly higher for bananas, which also has a first quartile of 0.
+
+```{r}
+avg_yield_bananas20
+avg_yield_potatoes20
+```
 
 
 
@@ -104,4 +115,33 @@ change_in_land_top20$Entity <- factor(change_in_land_top20$Entity,
 ggplot(change_in_land_top20, aes(x = Entity, y = Land_Efficiency)) +
   geom_col() +
   coord_flip()
+```
+
+```{r}
+tractors_numeric <- dat[[3]] %>%
+  filter(str_detect(dat[[3]]$Year, '[:alpha:]') == FALSE) %>%
+  mutate(Year = as.numeric(Year)) %>%
+  filter(is.na(`Cereal yield (kilograms per hectare) (kg per hectare)`) == FALSE,
+         is.na(`Tractors per 100 sq km arable land`) == FALSE,
+         !(Code %in% c('ARE', 'VCT')))
+  
+ggplot(tractors_numeric, aes(x =`Tractors per 100 sq km arable land`,
+                             y = `Cereal yield (kilograms per hectare) (kg per hectare)`)) +
+  geom_point() +
+  geom_smooth()
+
+tractors_numeric %>%
+  arrange(desc(`Cereal yield (kilograms per hectare) (kg per hectare)`))
+
+```
+
+```{r}
+fertilizer_use <- dat[[2]] %>%
+  filter(is.na(`Cereal yield (tonnes per hectare)`) == FALSE
+         )
+
+ggplot(dat[[2]], aes(x = `Nitrogen fertilizer use (kilograms per hectare)`,
+                             y = `Cereal yield (tonnes per hectare)`)) +
+  geom_point() +
+  geom_smooth()
 ```

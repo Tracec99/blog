@@ -1,0 +1,77 @@
+---
+title: Washington Trails
+author: Trace Freeman
+date: '2020-12-10'
+slug: washington-trails
+categories: []
+tags: []
+editor_options: 
+  chunk_output_type: console
+---
+
+<link href="index_files/anchor-sections/anchor-sections.css" rel="stylesheet" />
+<script src="index_files/anchor-sections/anchor-sections.js"></script>
+
+
+<pre class="r"><code>library(tidyverse)
+library(here)
+library(patchwork)</code></pre>
+<pre class="r"><code>dat &lt;- read_rds(here(&#39;data&#39;, &#39;tidytuesday&#39;, &#39;data&#39;, &#39;2020&#39;, &#39;2020-11-24&#39;, &#39;hike_data.rds&#39;))
+
+trail_data &lt;- dat %&gt;%
+  separate(location, c(&#39;region&#39;, &#39;location&#39;), sep = &#39; -- &#39;) %&gt;%
+  separate(length, c(&#39;length&#39;, &#39;unit&#39;), sep = &#39; (?=miles)&#39;) %&gt;%
+  mutate(length = as.numeric(length), gain = as.numeric(gain), highpoint = as.numeric(highpoint), rating = as.numeric(rating))</code></pre>
+<pre><code>## Warning: Expected 2 pieces. Missing pieces filled with `NA` in 38 rows [34, 73,
+## 271, 306, 537, 559, 599, 652, 672, 708, 718, 749, 799, 800, 835, 836, 889, 1014,
+## 1033, 1100, ...].</code></pre>
+<pre class="r"><code>five_star_trails &lt;- trail_data %&gt;%
+  filter(rating == 5) %&gt;%
+  group_by(region) %&gt;%
+  summarize(count = n())
+
+five_star_trails$region &lt;- factor(five_star_trails$region,
+                               levels = five_star_trails$region[order(
+                                   five_star_trails$count, decreasing = FALSE)])
+  
+
+p1 &lt;- ggplot(five_star_trails, aes(x = region, y = count)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = &#39;Number of Five-Star Trails per Region&#39;)
+
+zero_star_trails &lt;- trail_data %&gt;%
+  filter(rating == 0) %&gt;%
+  group_by(region) %&gt;%
+  summarize(count = n())
+
+zero_star_trails$region &lt;- factor(zero_star_trails$region,
+                               levels = zero_star_trails$region[order(
+                                   zero_star_trails$count, decreasing = FALSE)])
+  
+
+p2 &lt;- ggplot(zero_star_trails, aes(x = region, y = count)) +
+  geom_col() +
+  coord_flip()
+
+p1 + p2</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<pre class="r"><code>five_star_trail_features &lt;- trail_data %&gt;%
+  filter(rating == 5) %&gt;%
+  select(features)
+  
+trail_features_unlist &lt;- tibble(feature = unlist(five_star_trail_features$features,
+                                              recursive = FALSE))
+
+trail_features_count &lt;- trail_features_unlist %&gt;%
+  group_by(feature) %&gt;%
+  summarize(count = n())
+
+trail_features_count$feature &lt;- factor(trail_features_count$feature,
+                               levels = trail_features_count$feature[order(
+                                   trail_features_count$count, decreasing = FALSE)])
+
+ggplot(trail_features_count, aes(x = feature, y = count)) +
+  geom_col() +
+  coord_flip()</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
