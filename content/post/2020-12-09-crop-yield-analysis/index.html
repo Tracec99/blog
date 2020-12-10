@@ -28,50 +28,12 @@ for (i in 1:length(files)) {
     dat[[i]] &lt;- read_csv(paste(filepath, files[i], sep=&#39;/&#39;))
   }
 }</code></pre>
-<pre><code>## Parsed with column specification:
-## cols(
-##   Entity = col_character(),
-##   Code = col_character(),
-##   Year = col_double(),
-##   `Arable land needed to produce a fixed quantity of crops ((1.0 = 1961))` = col_double()
-## )</code></pre>
-<pre><code>## Parsed with column specification:
-## cols(
-##   Entity = col_character(),
-##   Code = col_character(),
-##   Year = col_double(),
-##   `Cereal yield (tonnes per hectare)` = col_double(),
-##   `Nitrogen fertilizer use (kilograms per hectare)` = col_double()
-## )</code></pre>
-<pre><code>## Parsed with column specification:
-## cols(
-##   Entity = col_character(),
-##   Code = col_character(),
-##   Year = col_character(),
-##   `Tractors per 100 sq km arable land` = col_double(),
-##   `Cereal yield (kilograms per hectare) (kg per hectare)` = col_double(),
-##   `Total population (Gapminder)` = col_double()
-## )</code></pre>
-<pre><code>## Parsed with column specification:
-## cols(
-##   Entity = col_character(),
-##   Code = col_character(),
-##   Year = col_double(),
-##   `Wheat (tonnes per hectare)` = col_double(),
-##   `Rice (tonnes per hectare)` = col_double(),
-##   `Maize (tonnes per hectare)` = col_double(),
-##   `Soybeans (tonnes per hectare)` = col_double(),
-##   `Potatoes (tonnes per hectare)` = col_double(),
-##   `Beans (tonnes per hectare)` = col_double(),
-##   `Peas (tonnes per hectare)` = col_double(),
-##   `Cassava (tonnes per hectare)` = col_double(),
-##   `Barley (tonnes per hectare)` = col_double(),
-##   `Cocoa beans (tonnes per hectare)` = col_double(),
-##   `Bananas (tonnes per hectare)` = col_double()
-## )</code></pre>
-<p>dat[[4]]: key_crop_yields.csv</p>
+<div id="question-1" class="section level2">
+<h2>Question 1:</h2>
+<p>First, I would like to determine what the most abundant crops are and whether this has changed over time. Before that, I’ll have to transform the data into a long format and filter out non-countries to prevent double counting. Then, I can sum the total global crop yield and plot it by year.</p>
 <pre class="r"><code>crop_yields_long &lt;- dat[[4]] %&gt;%
-  pivot_longer(., -c(&#39;Entity&#39;, &#39;Code&#39;, &#39;Year&#39;), names_to = &#39;Crop&#39;, values_to = &#39;Value&#39;)
+  pivot_longer(., -c(&#39;Entity&#39;, &#39;Code&#39;, &#39;Year&#39;), names_to = &#39;Crop&#39;, values_to = &#39;Value&#39;) %&gt;%
+  filter(is.na(Code) == FALSE)
   
 total_crops_by_year &lt;- crop_yields_long %&gt;%
   group_by(Year, Crop) %&gt;%
@@ -80,141 +42,119 @@ total_crops_by_year &lt;- crop_yields_long %&gt;%
   ggplot(total_crops_by_year, aes(x = Year, y = Crop_Total, color = Crop)) +
   geom_line()</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" />
-Looking at the above plot, it seems that the two most abundant crops in tonnes per hectare are bananas and potatoes. Bananas began as the most abundant in 1961, but were surpassed by potatoes sometime in the mid 70’s. How do the distribution of yields of these two crops compare?</p>
-<pre class="r"><code>avg_yield_potatoes20 &lt;- crop_yields_long %&gt;%
+It seems that the two most abundant crops in tonnes per hectare are bananas and potatoes. Bananas began as the most abundant in 1961, but were surpassed by potatoes sometime in the mid 70’s. How do the distribution of yields of these two crops compare?</p>
+<pre class="r"><code>avg_yield &lt;- crop_yields_long %&gt;%
+  filter(Crop == &#39;Bananas (tonnes per hectare)&#39; | Crop == &#39;Potatoes (tonnes per hectare)&#39;) %&gt;%
+  group_by(Entity, Code, Crop) %&gt;%
+  summarize(average_yield = sum(Value, na.rm = TRUE) / 
+              (max(crop_yields_long$Year) - min(crop_yields_long$Year)))
+
+ggplot(avg_yield, aes(Crop, average_yield)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter()</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-4-1.png" width="672" />
+In the above plot, each point represents a country (regions and subregions were removed from the data) and its average yield of each crop per year since 1961. Looking at the plot, it appears that there is greater variability in banana production, suggesting that fewer countries produce large amounts of bananas, contributing to the crop’s abundance.</p>
+<pre class="r"><code>crop_yields_long %&gt;%
   filter(Crop == &#39;Potatoes (tonnes per hectare)&#39;) %&gt;%
   group_by(Entity, Code) %&gt;%
   summarize(average_yield = sum(Value, na.rm = TRUE) / 
               (max(crop_yields_long$Year) - min(crop_yields_long$Year))) %&gt;%
-  arrange(desc(average_yield)) %&gt;%
   ungroup() %&gt;%
-  filter(is.na(Code) == FALSE) %&gt;%
-  slice(1:20)</code></pre>
-<pre class="r"><code>avg_yield_bananas20 &lt;- crop_yields_long %&gt;%
+  summarize(Minimum = min(average_yield),
+            Q1 = quantile(average_yield, probs = .25),
+            Median = median(average_yield),
+            Mean = mean(average_yield),
+            Q3 = quantile(average_yield, probs = 0.75),
+            Maximum = max(average_yield),
+            Stdev. = sd(average_yield))</code></pre>
+<pre><code>## # A tibble: 1 x 7
+##   Minimum    Q1 Median  Mean    Q3 Maximum Stdev.
+##     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;
+## 1       0  2.14   9.12  10.1  14.8    40.2   8.96</code></pre>
+<pre class="r"><code>crop_yields_long %&gt;%
   filter(Crop == &#39;Bananas (tonnes per hectare)&#39;) %&gt;%
   group_by(Entity, Code) %&gt;%
   summarize(average_yield = sum(Value, na.rm = TRUE) / 
               (max(crop_yields_long$Year) - min(crop_yields_long$Year))) %&gt;%
-  arrange(desc(average_yield)) %&gt;%
   ungroup() %&gt;%
-  filter(is.na(Code) == FALSE) %&gt;%
-  slice(1:20)</code></pre>
-<pre class="r"><code>avg_yield_both &lt;- crop_yields_long %&gt;%
-  filter(Crop == &#39;Bananas (tonnes per hectare)&#39; | Crop == &#39;Potatoes (tonnes per hectare)&#39;) %&gt;%
-  group_by(Entity, Code, Crop) %&gt;%
-  summarize(average_yield = sum(Value, na.rm = TRUE) / 
-              (max(crop_yields_long$Year) - min(crop_yields_long$Year))) %&gt;%
-  filter(is.na(Code) == FALSE)
-
-ggplot(avg_yield_both, aes(Crop, average_yield)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter()</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" />
-In the above plot, each point represents a country (regions and subregions were removed from the data) and its average yield of each crop per year since 1961. The upper outliers for the data are significantly higher for bananas, which also has a first quartile of 0.</p>
-<pre class="r"><code>avg_yield_bananas20</code></pre>
-<pre><code>## # A tibble: 20 x 3
-##    Entity        Code  average_yield
-##    &lt;chr&gt;         &lt;chr&gt;         &lt;dbl&gt;
-##  1 Mali          MLI            56.9
-##  2 Nicaragua     NIC            50.0
-##  3 Panama        PAN            45.2
-##  4 Costa Rica    CRI            42.7
-##  5 Honduras      HND            39.3
-##  6 Spain         ESP            39.1
-##  7 Israel        ISR            38.6
-##  8 Colombia      COL            31.9
-##  9 Guatemala     GTM            31.1
-## 10 Egypt         EGY            31.1
-## 11 Indonesia     IDN            31.0
-## 12 Cote d&#39;Ivoire CIV            28.1
-## 13 Turkey        TUR            27.6
-## 14 Martinique    MTQ            26.4
-## 15 Ecuador       ECU            25.9
-## 16 Cape Verde    CPV            25.8
-## 17 Suriname      SUR            25.5
-## 18 Portugal      PRT            25.4
-## 19 Cyprus        CYP            24.5
-## 20 Argentina     ARG            24.2</code></pre>
-<pre class="r"><code>avg_yield_potatoes20</code></pre>
-<pre><code>## # A tibble: 20 x 3
-##    Entity         Code  average_yield
-##    &lt;chr&gt;          &lt;chr&gt;         &lt;dbl&gt;
-##  1 Netherlands    NLD            40.2
-##  2 Switzerland    CHE            37.0
-##  3 New Zealand    NZL            36.5
-##  4 United Kingdom GBR            35.6
-##  5 United States  USA            35.6
-##  6 Denmark        DNK            33.6
-##  7 France         FRA            33.0
-##  8 Israel         ISR            32.8
-##  9 Germany        DEU            31.8
-## 10 Sweden         SWE            29.4
-## 11 Ireland        IRL            28.9
-## 12 Japan          JPN            28.1
-## 13 Australia      AUS            27.9
-## 14 Austria        AUT            27.3
-## 15 Norway         NOR            25.0
-## 16 Kuwait         KWT            23.6
-## 17 South Africa   ZAF            22.5
-## 18 Turkey         TUR            21.6
-## 19 Canada         CAN            21.6
-## 20 Argentina      ARG            21.3</code></pre>
+  summarize(Minimum = min(average_yield),
+            Q1 = quantile(average_yield, probs = .25),
+            Median = median(average_yield),
+            Mean = mean(average_yield),
+            Q3 = quantile(average_yield, probs = 0.75),
+            Maximum = max(average_yield),
+            Stdev. = sd(average_yield))</code></pre>
+<pre><code>## # A tibble: 1 x 7
+##   Minimum    Q1 Median  Mean    Q3 Maximum Stdev.
+##     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;
+## 1       0     0   4.94  8.77  14.0    56.9   10.8</code></pre>
+<p>The two tables of summary statistics above further iterate this difference in variability, as bananas have a higher standard deviation of 10.8 to potatoes’ 8.96.</p>
+</div>
+<div id="question-2" class="section level2">
+<h2>Question 2:</h2>
+<p>Which countries have seen the greatest increase in farming efficiency? This can be measured using the data found in <code>arable_land_pin.csv</code>, which details the amount of arable land needed to produce a fixed amount of crops (determined by the country’s 1961 baseline crop production). This should be relatively straight forward, as I would simply need to filter for the most recent data. I will also factor the values to spatially rank the countries by increase in efficiency.</p>
 <pre class="r"><code>change_in_land_efficiency_since_1961 &lt;- dat[[1]] %&gt;%
-  rename(Land_Efficiency = 
+  rename(Arable_Land_Needed= 
            `Arable land needed to produce a fixed quantity of crops ((1.0 = 1961))`) %&gt;%
-  filter(Year == max(Year))
+  filter(is.na(Code) == FALSE, Year == max(Year))
 
 change_in_land_top20 &lt;- change_in_land_efficiency_since_1961 %&gt;%
-  arrange(Land_Efficiency) %&gt;%
-  filter(Entity != &#39;Eastern Asia&#39;) %&gt;%
+  arrange(Arable_Land_Needed) %&gt;%
   slice(1:20)
   
 change_in_land_top20$Entity &lt;- factor(change_in_land_top20$Entity,
                                levels = change_in_land_top20$Entity[order(
-                                   change_in_land_top20$Land_Efficiency, decreasing = TRUE)])
+                                   change_in_land_top20$Arable_Land_Needed, decreasing = TRUE)])
 
-ggplot(change_in_land_top20, aes(x = Entity, y = Land_Efficiency)) +
+ggplot(change_in_land_top20, aes(x = Entity, y = Arable_Land_Needed)) +
   geom_col() +
   coord_flip()</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" width="672" />
+Above are shown the 20 countries with the greatest increase in farming efficiency since 1961 (Note: a lower value denotes a greater increase in farming efficiency in this context). It appears most of these countries come from Africa, South-Central America, and various regions in West and South-East Asia. This data may suggest that advances in agriculture since 1961 have mostly benefited these regions.</p>
+</div>
+<div id="question-3" class="section level2">
+<h2>Question 3:</h2>
+<p>How much do tractor use and fertilizer use contribute to this increase in farming efficiency? To answer this question, I will plot crop yield against each of the two associated datasets. However, there are some issues namely with the tractor dataset. Because of its joining with the <code>gapminder</code> dataset, there are many observations that have no use, including observations with <code>Year</code> variables corresponding years before 1961. After properly filtering the data, we can finally plot the data.</p>
 <pre class="r"><code>tractors_numeric &lt;- dat[[3]] %&gt;%
   filter(str_detect(dat[[3]]$Year, &#39;[:alpha:]&#39;) == FALSE) %&gt;%
   mutate(Year = as.numeric(Year)) %&gt;%
   filter(is.na(`Cereal yield (kilograms per hectare) (kg per hectare)`) == FALSE,
-         is.na(`Tractors per 100 sq km arable land`) == FALSE,
-         !(Code %in% c(&#39;ARE&#39;, &#39;VCT&#39;)))
+         is.na(`Tractors per 100 sq km arable land`) == FALSE)
   
 ggplot(tractors_numeric, aes(x =`Tractors per 100 sq km arable land`,
                              y = `Cereal yield (kilograms per hectare) (kg per hectare)`)) +
   geom_point() +
   geom_smooth()</code></pre>
 <pre><code>## `geom_smooth()` using method = &#39;gam&#39; and formula &#39;y ~ s(x, bs = &quot;cs&quot;)&#39;</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-8-1.png" width="672" />
+A majority of the data appears to follow a relatively tight grouping associating increasing crop yield with a higher rate of tractor use. However, there are a few different outliers seen in the data that have significantly higher yields than and significantly lower tractor amounts. These observations can be viewed by sorting the data, as they actually seem to have the highest crop yields out of all of the data.</p>
 <pre class="r"><code>tractors_numeric %&gt;%
   arrange(desc(`Cereal yield (kilograms per hectare) (kg per hectare)`))</code></pre>
-<pre><code>## # A tibble: 6,835 x 6
-##    Entity  Code   Year `Tractors per 100… `Cereal yield (kilo… `Total populatio…
-##    &lt;chr&gt;   &lt;chr&gt; &lt;dbl&gt;              &lt;dbl&gt;                &lt;dbl&gt;             &lt;dbl&gt;
-##  1 Puerto… PRI    1983               486.                9789.           3202000
-##  2 Puerto… PRI    1981               523.                9695.           3132000
-##  3 Puerto… PRI    1982               511.                9672.           3168000
-##  4 Belgium BEL    2004              1137.                9185.          10480000
-##  5 Kuwait  KWT    1994               160                 9148.           1659000
-##  6 Belgium BEL    2005              1127.                8650.          10547000
-##  7 Belgium BEL    2003              1150.                8531.          10419000
-##  8 Belgium BEL    2002              1154.                8501.          10365000
-##  9 Nether… NLD    1996              1866.                8293.          15563000
-## 10 Belgium BEL    2001              1136.                8218.          10319000
-## # … with 6,825 more rows</code></pre>
+<pre><code>## # A tibble: 6,902 x 6
+##    Entity    Code   Year `Tractors per 10… `Cereal yield (kil… `Total populatio…
+##    &lt;chr&gt;     &lt;chr&gt; &lt;dbl&gt;             &lt;dbl&gt;               &lt;dbl&gt;             &lt;dbl&gt;
+##  1 United A… ARE    1998              76.4              17656.           2813000
+##  2 United A… ARE    2000              63.3              17355.           3134000
+##  3 United A… ARE    1999              64.0              17023.           2966000
+##  4 United A… ARE    1997              60.4              15894            2671000
+##  5 Saint Vi… VCT    2000             208                15000             108000
+##  6 Saint Vi… VCT    2002             226                14857.            108000
+##  7 Saint Vi… VCT    2003             224                14825             108000
+##  8 Saint Vi… VCT    2001             212                14286.            108000
+##  9 Puerto R… PRI    1983             486.                9789.           3202000
+## 10 Puerto R… PRI    1981             523.                9695.           3132000
+## # … with 6,892 more rows</code></pre>
+<p>It appears that the offending outliers are uniquely from the <code>United Arab Emirates</code> and <code>Saint Vincent and the Grenadines</code>. Both of these countries are relatively small compared to most others in the world, so there may be some issue with measuring smaller countries in this way.</p>
+<p>The data for fertilizer use appears to be much more usable, and should not be much of an issue to work with, after filtering out observations for which there is no recorded data.</p>
 <pre class="r"><code>fertilizer_use &lt;- dat[[2]] %&gt;%
-  filter(is.na(`Cereal yield (tonnes per hectare)`) == FALSE
-         )
+  filter(is.na(`Cereal yield (tonnes per hectare)`) == FALSE) %&gt;%
+  filter(is.na(`Nitrogen fertilizer use (kilograms per hectare)`) == FALSE)
 
-ggplot(dat[[2]], aes(x = `Nitrogen fertilizer use (kilograms per hectare)`,
+ggplot(fertilizer_use, aes(x = `Nitrogen fertilizer use (kilograms per hectare)`,
                              y = `Cereal yield (tonnes per hectare)`)) +
   geom_point() +
   geom_smooth()</code></pre>
 <pre><code>## `geom_smooth()` using method = &#39;gam&#39; and formula &#39;y ~ s(x, bs = &quot;cs&quot;)&#39;</code></pre>
-<pre><code>## Warning: Removed 9127 rows containing non-finite values (stat_smooth).</code></pre>
-<pre><code>## Warning: Removed 9127 rows containing missing values (geom_point).</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-10-1.png" width="672" />
+The fertilizer data appears to follow the same general shape as the tractor data.</p>
+</div>
