@@ -18,6 +18,7 @@ library(tidyverse)
 library(here)
 library(patchwork)
 ```
+
 I will be analyzing global agricultural development using data taken from the TidyTuesday GitHub page. The primary data I will be using is contained `key_crop_yields.csv`, which has 13,075 observations and 14 variables: The variable `Entity`, a character that denotes the name of the region or country the observation comes from, the variable `Code`, which is the country code of the country the observation comes from (continents and regions use NA, and `Year`, a double ranging from 1961-2014 that represents the year the observation comes from. Additionally, there are 11 other variables representing 11 different crops and their yield in metric tonnes per hectare. The different crops represented are wheat, rice, maize, soybeans, potatoes, beans, peas, cassava, barley, cocoa beans, and bananas. 
 
 The other data of interest are found in `arable_land_pin.csv`,  which contains the additional double variable `Arable land needed to produce a fixed quantity of crops ((1.0 = 1961))`, which can be used to track changes in land use efficiency over time. I will also be using the data in the files `cereal_crop_yield_vs_fertilizer_application.csv` and `cereal_yields_vs_tractor_inputs_in_agriculture.csv`, both of which track the use of fertilizer and tractors in agriculture over time, two important factors in farming efficiency. `Fertilizer` contains the additional variables `Cereal yield` and `Nitrogen fertilizer use`, while `Tractor_inputs` contains `Tractors per 100 sq km arable land`, `Cereal yield (kilograms per hectare)`, and `Total population`, which is taken from the Gapminder dataset. Each of these 3 datasets also contain the key variables `Entity`, `Code`, and `Year`.
@@ -52,6 +53,7 @@ total_crops_by_year <- crop_yields_long %>%
   ggplot(total_crops_by_year, aes(x = Year, y = Crop_Total, color = Crop)) +
   geom_line()
 ```
+
 It seems that the two most abundant crops in tonnes per hectare are bananas and potatoes. Bananas began as the most abundant in 1961, but were surpassed by potatoes sometime in the mid 70's. How do the distribution of yields of these two crops compare?
 
 ```{r}
@@ -65,7 +67,8 @@ ggplot(avg_yield, aes(Crop, average_yield)) +
   geom_boxplot(outlier.shape = NA) +
   geom_jitter()
 ```
-In the above plot, each point represents a country (regions and subregions were removed from the data) and its average yield of each crop per year since 1961. Looking at the plot, it appears that there is greater variability in banana production, suggesting that fewer countries produce large amounts of bananas, contributing to the crop's abundance.
+
+In the above plot, each point represents a country (regions and subregions were removed from the data) and its average yield of each crop per year since 1961. Looking at the plot, it appears that there is greater variability in banana production, suggesting that fewer countries produce large amounts of bananas, contributing to the crop's abundance. To get a better idea of how the aggregate distributions look, I will generate some summary statistics for each crop.
 
 ```{r}
 crop_yields_long %>%
@@ -99,10 +102,12 @@ crop_yields_long %>%
             Stdev. = sd(average_yield))
 ```
 
-The two tables of summary statistics above further iterate this difference in variability, as bananas have a higher standard deviation of 10.8 to potatoes' 8.96.
+The two tables of summary statistics above further show this difference in variability, as bananas have a higher standard deviation of 10.8 to potatoes' 8.96. Another observation of interest is the fact that the distribution of average banana yields actually has a 1st quartile of 0 as a result of the crop's vastly disproportionate production by country.
 
 ## Question 2:
+
 Which countries have seen the greatest increase in farming efficiency? This can be measured using the data found in `arable_land_pin.csv`, which details the amount of arable land needed to produce a fixed amount of crops (determined by the country's 1961 baseline crop production). This should be relatively straight forward, as I would simply need to filter for the most recent data. I will also factor the values to spatially rank the countries by increase in efficiency.
+
 ```{r}
 change_in_land_efficiency_since_1961 <- dat[[1]] %>%
   rename(Arable_Land_Needed= 
@@ -121,10 +126,12 @@ ggplot(change_in_land_top20, aes(x = Entity, y = Arable_Land_Needed)) +
   geom_col() +
   coord_flip()
 ```
+
 Above are shown the 20 countries with the greatest increase in farming efficiency since 1961 (Note: a lower value denotes a greater increase in farming efficiency in this context). It appears most of these countries come from Africa, South-Central America, and various regions in West and South-East Asia. This data may suggest that advances in agriculture since 1961 have mostly benefited these regions.
 
 ## Question 3:
 How much do tractor use and fertilizer use contribute to this increase in farming efficiency? To answer this question, I will plot crop yield against each of the two associated datasets. However, there are some issues namely with the tractor dataset. Because of its joining with the `gapminder` dataset, there are many observations that have no use, including observations with `Year` variables corresponding years before 1961. After properly filtering the data, we can finally plot the data.
+
 ```{r}
 tractors_numeric <- dat[[3]] %>%
   filter(str_detect(dat[[3]]$Year, '[:alpha:]') == FALSE) %>%
@@ -137,15 +144,19 @@ ggplot(tractors_numeric, aes(x =`Tractors per 100 sq km arable land`,
   geom_point() +
   geom_smooth()
 ```
+
 A majority of the data appears to follow a relatively tight grouping associating increasing crop yield with a higher rate of tractor use. However, there are a few different outliers seen in the data that have significantly higher yields than and significantly lower tractor amounts. These observations can be viewed by sorting the data, as they actually seem to have the highest crop yields out of all of the data.
+
 ```{r}
 tractors_numeric %>%
   arrange(desc(`Cereal yield (kilograms per hectare) (kg per hectare)`))
 
 ```
- It appears that the offending outliers are uniquely from the `United Arab Emirates` and `Saint Vincent and the Grenadines`. Both of these countries are relatively small compared to most others in the world, so there may be some issue with measuring smaller countries in this way.
+
+It appears that the offending outliers are uniquely from the `United Arab Emirates` and `Saint Vincent and the Grenadines`. Both of these countries are relatively small compared to most others in the world, so there may be some flaw with the way the data has been recorded in regards to smaller countries.
  
 The data for fertilizer use appears to be much more usable, and should not be much of an issue to work with, after filtering out observations for which there is no recorded data.
+
 ```{r}
 fertilizer_use <- dat[[2]] %>%
   filter(is.na(`Cereal yield (tonnes per hectare)`) == FALSE) %>%
@@ -156,4 +167,5 @@ ggplot(fertilizer_use, aes(x = `Nitrogen fertilizer use (kilograms per hectare)`
   geom_point() +
   geom_smooth()
 ```
-The fertilizer data appears to follow the same general shape as the tractor data.
+
+The fertilizer data appears to follow the same general shape as the tractor data. In both plots, there seems to be an eventual plateau in the additional yield given by increases in tractors and fertilizer use. For nitrogen fertilizer use specifically, this poses an important question regarding the optimum amount of fertilizer to use. Due to the proven adverse impacts that nitrogen fertilizer runoff has on local ecosystems, it may be appropriate to regulate fertilizer use in countries that approach or pass the approximate 200 kg/hectare limit where increased effectiveness begins to plateau.

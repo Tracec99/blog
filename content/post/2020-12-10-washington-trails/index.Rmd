@@ -33,6 +33,7 @@ trail_data <- dat %>%
 
 ## Question 1:
 Is there any association with rating and the region a trail is in? After some exploratory analysis, it appears that there are both a significant amount of trails with a five star rating and a zero star rating. We can plot the number of trails of each rating per region.
+
 ```{r}
 five_star_trails <- trail_data %>%
   filter(rating == 5) %>%
@@ -71,10 +72,33 @@ p2 <- ggplot(zero_star_trails, aes(x = region, y = count)) +
 p1 + p2
 
 ```
-Comparing the two plots, it seems that both ratings seem to follow similar distributions per region. Each region, when ranked, falls in the same area within two places in the other distribution. The conclusion I can draw from this is that there is little association between the region a trail is in and its rating. For example, the high number of trails that are five-star and zero-star in `Eastern Washington` suggests that there are simply a large number of trails in the region.
+
+Comparing the two plots, it seems that both ratings seem to follow similar distributions per region. Each region, when ranked, falls in the same area within two places in both plots. The conclusion I can draw from this is that there is little association between the region a trail is in and its rating. For example, the high number of trails that are five-star and zero-star in `Eastern Washington` suggests that there are simply a large number of trails in the region. To check, we can plot the proportion of five-star trails in each region to see if it follows a similar pattern.
+
+```{r}
+five_star_prop <- trail_data %>%
+  group_by(region) %>%
+  summarize(n = n(),
+            n_five_star = sum(rating == 5),
+            proportion = n_five_star / n)
+
+five_star_prop$region <- factor(five_star_prop$region,
+                               levels = five_star_prop$region[order(
+                                   five_star_prop$proportion, decreasing = FALSE)])
+
+ggplot(five_star_prop, aes(x = region, y = proportion)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = 'Proportion of Five-Star Trails in Washington Regions',
+       x = 'Region',
+       y = 'Proportion of Five-Star Trails')
+```
+
+Here, we can see the same pattern in the proportion of trails in each region that are rated at five stars. This suggests that there is yet no real association between a region a trail is in and its rating.
 
 ## Question 2:
 What features are most common in highly rated trails? We can determine this by filtering for trails that have a five-star rating, unlisting the features (which are separated into lists per trail) for each trail, storing the entire list of features as a dataframe, then counting the number of each unique feature.
+
 ```{r}
 five_star_trail_features <- trail_data %>%
   filter(rating == 5) %>%
@@ -85,39 +109,70 @@ trail_features_unlist <- tibble(feature = unlist(five_star_trail_features$featur
 
 trail_features_count <- trail_features_unlist %>%
   group_by(feature) %>%
-  summarize(count = n())
+  summarize(count = n()) %>%
+  mutate(total = sum(count), proportion = count / total)
 
 trail_features_count$feature <- factor(trail_features_count$feature,
                                levels = trail_features_count$feature[order(
-                                   trail_features_count$count, decreasing = FALSE)])
+                                   trail_features_count$proportion, decreasing = FALSE)])
 
-ggplot(trail_features_count, aes(x = feature, y = count)) +
+ggplot(trail_features_count, aes(x = feature, y = proportion)) +
   geom_col() +
   coord_flip() +
-  labs(title = 'Popular Features for Washington Trails',
+  labs(title = 'Features in Five-Star Trails',
        x = 'Feature',
-       y = 'Count')
-  
+       y = 'Proportion of Trails')
+
 ```
-The data reveals that there are many common features associated with high ratings. Notably, `Mountain views` occurs most in the data.
+
+The data reveals that there are many common features associated with high ratings. Notably, `Mountain views` occurs most in the data. Is there any additional information looking at 0-star trails can give us?
+
+```{r}
+zero_star_trail_features <- trail_data %>%
+  filter(rating == 0) %>%
+  select(features)
+  
+trail_features_unlist <- tibble(feature = unlist(zero_star_trail_features$features,
+                                              recursive = FALSE))
+
+trail_features_count <- trail_features_unlist %>%
+  group_by(feature) %>%
+  summarize(count = n()) %>%
+  mutate(total = sum(count), proportion = count / total)
+
+trail_features_count$feature <- factor(trail_features_count$feature,
+                               levels = trail_features_count$feature[order(
+                                   trail_features_count$proportion, decreasing = FALSE)])
+
+ggplot(trail_features_count, aes(x = feature, y = proportion)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = 'Features in Zero-Star Trails',
+       x = 'Feature',
+       y = 'Proportion of Trails')
+```
+
+Looking at the distribution for zero-star trails, we find similar patterns, once again calling into question the association between common features and the rating of trails.
 
 ## Question 3:
 Is there any relationship between rating and trail elevation? This can be determined by plotting both the total height gain and the maximum elevation against a trail's rating.
 
 ```{r}
-ggplot(trail_data, aes(x = rating, y = gain)) +
-  geom_jitter(width = 0.25) +
+ggplot(trail_data, aes(x = factor(round(rating, digits = 0)), y = gain)) +
+  geom_boxplot()+
   labs(title = 'Trail Rating Vs. Height Gain',
        x = 'Trail Rating',
        y = 'Height Gain (ft. above sea level)')
 ```
-There doesn't appear to be any discernible association between height gain and trail rating. The clustering around ratings of 0 is likely to be associated with a number of unrated trails.
+
+There appears to be a very weak association between higher ratings and a greater height gain, most noticeable in the tight grouping of low height gain trails for 1-star trails (see very low bottom 50% of the data for 1 star trails). It seems that there is a greater number of high height-gain trails at higher ratings due to the increased number of distant outliers, but the data still doesn't seem conclusive enough for me to feel strongly about any particular conclusion. 
 
 ```{r}
-ggplot(trail_data, aes(x = rating, y = highpoint)) +
-  geom_jitter(width = 0.25) +
+ggplot(trail_data, aes(x = factor(round(rating, digits = 0)), y = highpoint)) +
+  geom_boxplot() +
   labs(title = 'Trail Rating Vs. Highpoint',
        x = 'Trail Rating',
        y = 'Highpoint (ft. above sea level)')
 ```
-Similarly, there doesn't seem to be any association with rating and maximum elevation.
+
+When comparing maximum elevation and ratings, the relationship is a little more evident. There appears to be a much stronger relationship between maximum elevation and higher ratings. Something to consider with this information is the high proportion of trails with `Mountain Views` as a feature. This could explain the weak relationship between a trail's elevation and its popularity, as these two factors contribute to the experience of a trail in the same way (as elevation increases, you are undoubtedly more likely to have 'mountain views'). 
