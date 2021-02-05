@@ -2,4 +2,4 @@
 title: "About Me"
 date: "2016-05-05T21:48:51-07:00"
 ---
-I am an Honors student currently pursuing a Bachelor's of Science in Data Science at the University of Arkansas at Fayettville. I acquired a love for backpacking and the outdoors during my time in the Boy Scouts. I enjoy learning about practically any topic that catches my interest, and I try to never stop learning.
+I am a freshman honors student currently majoring in data science at the University of Arkansas, Fayetteville. My interests include statistics, social data analytics, and environmental research. I have always loved the process of exploring data and discovering new insights. As a data science student at the University of Arkansas I am learning to ask questions with interesting answers and how to use the tools and skills at my disposal to develop data-driven solutions to real-world issues. In the Boy Scouts, I developed leadership, communication, and teamwork skills and acquired a love of the outdoors, earning the Eagle Scout Award in August of 2017.
