@@ -49,7 +49,7 @@ photobigness: 1.70cm
 
 # Skills
 
-- Programming: Python, R
+- Programming: Python, R, BASH
 - Software: Git, Visual Studio Code, RStudio, Microsoft Office Suite
 - Comfortable working in UNIX/Linux environments
 
